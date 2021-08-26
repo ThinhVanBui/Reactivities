@@ -1,26 +1,41 @@
 import { observer } from 'mobx-react-lite'
-import React, { ChangeEvent } from 'react'
+import React, { ChangeEvent, useEffect } from 'react'
 import { useState } from 'react'
+import { Link, useHistory, useParams } from 'react-router-dom'
 import { Button, Form, Segment } from 'semantic-ui-react'
+import LoadingComponent from '../../../app/layout/LoadingComponent'
 import { useStore } from '../../../app/stores/store'
+import { v4 as uuid } from 'uuid';
 
 const ActivityForm = () => {
   const {activityStore} = useStore();
-  const {selectedActivity, closeForm, createActivity, updateActivity, loading} = activityStore;
+  const {createActivity, updateActivity, loading,loadActivity,loadingInitial} = activityStore;
 
-  const initialState = selectedActivity ?? {
+  const history = useHistory();
+  const {id} = useParams<{id: string}>();
+  const [activity, setActivity] = useState({
     id: "",
     title: "",
     date: "",
     description: "",
     category: "",
     city: "",
-    venue: ""
-  }
-  const [activity, setActivity] = useState(initialState);
+    venue: ""   
+  });
+
+  useEffect(()=> {
+    if(id) loadActivity(id).then((activity)=> setActivity(activity!))
+  }, [id, loadActivity])
 
   const handleSubmit = () => {
-    activity.id ? updateActivity(activity) : createActivity(activity)
+    if(activity.id.length === 0){
+      let newActivity = {
+        ...activity, id: uuid()
+      }
+      createActivity(newActivity).then(()=>history.push(`/activities/${newActivity.id}`));
+    }else{
+      updateActivity(activity).then(()=>history.push(`/activities/${activity.id}`));
+    }
   }
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -29,6 +44,7 @@ const ActivityForm = () => {
       return {...prevState, [name]: value}
     })
   }
+  if(loadingInitial) return <LoadingComponent content='Loading activities...'/>
   return (
     <Segment clearing>
       <Form onSubmit={handleSubmit} autoComplete='off'>
@@ -39,7 +55,7 @@ const ActivityForm = () => {
         <Form.Input placeholder='City' value={activity.city} name='city' onChange={handleInputChange}/>
         <Form.Input placeholder='Venue' value={activity.venue} name='venue' onChange={handleInputChange}/>
         <Button loading={loading} floated='right' positive type='submit' content='Submit'/>
-        <Button onClick={() => closeForm()} floated='right' type='button' content='Cancel'/>
+        <Button as={Link} to='/activities' floated='right' type='button' content='Cancel'/>
       </Form>
       
     </Segment>
