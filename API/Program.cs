@@ -21,7 +21,8 @@ namespace API
             using var scope = host.Services.CreateScope();
             var services = scope.ServiceProvider;
             try{
-                var context = services.GetRequiredService<DataContext>();//In StartUp class we add DataContext as a service
+                //In StartUp class we add DataContext as a service
+                var context = services.GetRequiredService<DataContext>();
                 await context.Database.MigrateAsync();
                 await Seed.SeedData(context);
             }
